@@ -1,558 +1,446 @@
 /*
 * @file project.c
-* @author ���������� ��������� ��������, ��. 515�
-* @date   25.06.2021
-* @brief  ��������
-* ����������� ���������� � ������������ ������.
+* @author Армейський Олександр Олегович, гр. 515в
+* @date 25.06.2021
+* @brief Практика
+* Калькулятор правильных и неправильных дробей.
 */
-
-
 #define _CRT_SECURE_NO_WARNINGS
 #include<stdio.h>
 #include<stdlib.h>
 #include<string.h>
 #include<locale.h>
-
 typedef struct
 {
-	int denum;
-	int num;
+int denum;
+int num;
 }num_value;
-
 typedef struct val
 {
-	num_value value;
-	struct val* next;
-	int size;
+num_value value;
+struct val* next;
+int size;
 }numbers;
-
 typedef struct op
 {
-	char value;
-	struct op* next;
-	int size;
+char value;
+struct op* next;
+int size;
 }operators;
-
-// ---------------------------------- ����
-
+// Стек
 /// 
-/// ������� ��� ���� \ ����
+/// Функции для цифр \ Стек
 /// 
-
 void Push_num(int nmb,int denmb,numbers** beg)
 {
-	numbers* nw_num;
-
-		nw_num = malloc(sizeof(numbers));
-		nw_num->value.num = nmb;
-		nw_num->value.denum = denmb;
-		nw_num->next = *beg;
-
-		*beg = nw_num;
-
-	return;
+numbers* nw_num;
+nw_num = malloc(sizeof(numbers));
+nw_num->value.num = nmb;
+nw_num->value.denum = denmb;
+nw_num->next = *beg;
+*beg = nw_num;
+return;
 }
-
 num_value Pop_num(numbers** beg)
-{
-
-	num_value pp = (*beg)->value;
-	numbers* clr = *beg;
-
-	*beg = (*beg)->next;
-	free(clr);
-
-	return pp;
+{num_value pp = (*beg)->value;
+numbers* clr = *beg;
+*beg = (*beg)->next;
+free(clr);
+return pp;
 }
-
 /// 
-/// ������� ��� �������� \ ����
+/// Функции для операций \ Стек
 /// 
-
-
 void Push_op(char opr, operators** beg)
 {
-	operators* nw_op;
-
-	nw_op = malloc(sizeof(operators));
-	nw_op->value = opr;
-	nw_op->next = *beg;
-
-	*beg = nw_op;
-
-	return;
+operators* nw_op;
+nw_op = malloc(sizeof(operators));
+nw_op->value = opr;
+nw_op->next = *beg;
+*beg = nw_op;
+return;
 }
-
 char Pop_op(operators** beg)
 {
-
-	if ((*beg) != NULL)
-	{
-		char pp = (*beg)->value;
-		operators* clr = *beg;
-
-		*beg = (*beg)->next;
-		free(clr);
-
-		return pp;
-	}
-	else
-		return -1;
+if ((*beg) != NULL)
+{
+char pp = (*beg)->value;
+operators* clr = *beg;
+*beg = (*beg)->next;
+free(clr);
+return pp;
 }
-
+else
+return -1;
+}
 char Top_op(operators** beg)
 {
-	if ((*beg) != NULL)
-		return (*beg)->value;
-	else
-		return -1;
+if ((*beg) != NULL)
+return (*beg)->value;
+else
+return -1;
 }
-//---------------------------- �������
-
-// ���������� ����� �������
+// Рассчет
+// Наименьшее общее кратное
 int gcd(num_value sort)
 {
-	if (sort.num < 0)
-		sort.num *= -1;
-	if (sort.denum < 0)
-		sort.denum *= -1;
-
-	while (sort.num && sort.denum)
-	{
-		if (sort.num >= sort.denum)
-			sort.num %= sort.denum;
-		else
-			sort.denum %= sort.num;
-	}
-
-	return sort.num | sort.denum;
+if (sort.num < 0)
+sort.num *= -1;
+if (sort.denum < 0)
+sort.denum *= -1;
+while (sort.num && sort.denum)
+{
+if (sort.num >= sort.denum)sort.num %= sort.denum;
+else
+sort.denum %= sort.num;
 }
-
-// ���������� �����
+return sort.num | sort.denum;
+}
+// Сокращение дроби
 void sorting_fractions(num_value* sort)
 {
-	int nod = gcd(*sort);
-	sort->num /= nod;
-	sort->denum /= nod;
-
-	if ((sort->denum < 0))
-	{
-		sort->denum *= -1;
-		sort->num *= -1;
-	}
-
-	return;
+int nod = gcd(*sort);
+sort->num /= nod;
+sort->denum /= nod;
+if ((sort->denum < 0))
+{
+sort->denum *= -1;
+sort->num *= -1;
 }
-
-//--------------------------����������� ������------------------------------
+return;
+}
+//--------------------------Калькулятор дробей------------------------------
 numbers* math_calculate(numbers* stcN,operators* stcO,int* flg)
 {
-	static numbers* ss;
-	static operators* dd;
-	static flag = 0;
-	static int inrec = 0;
-	num_value b, a, c;
-	int tf;
-	while (1)
-	{
-		if (stcN == NULL)
-		{
-			printf("\n������ �����!\n");
-			exit(-10001);
-		}
-
-		b = Pop_num(&stcN);
-
-		sorting_fractions(&b);
-
-		if (b.denum == 0)
-		{
-			printf("\n������! ������� �� ����\n");
-			exit(-423);
-		}
-
-		if (stcN == NULL)
-		{
-			if (Top_op(&stcO) != -1)
-			{
-				if (Top_op(&stcO) == ')')
-				{
-					flag++;
-					Pop_op(&stcO);
-					Push_num(b.num, b.denum, &stcN);
-					continue;
-				}
-				if (Top_op(&stcO) == '-')
-				{
-					b.num = -b.num;
-					Pop_op(&stcO);
-				}
-				if (Top_op(&stcO) == '+') {
-					Pop_op(&stcO);
-				}
-
-				if (Top_op(&stcO) == '(')
-				{
-					if (flag > 0)
-					{
-						flag--;
-						Pop_op(&stcO);
-						Push_num(b.num, b.denum, &stcN);
-						continue;
-					}
-					else
-					{
-						printf("\n������! ������������ ����\n");
-						exit(-901);
-					}
-				}
-
-				if (Top_op(&stcO) != -1)
-				{
-					printf("\n������! ������������ ����!\n");
-					exit(-901);
-				}
-
-				
-			}
-
-			Push_num(b.num, b.denum, &stcN);
-			ss = stcN;
-			dd = stcO;
-			break;
-
-		}
-
-		if (Top_op(&stcO) == ')')
-		{
-			flag++;
-			Push_num(b.num, b.denum, &stcN);
-			Pop_op(&stcO);
-			math_calculate(stcN, stcO, flg);
-			stcN = ss;
-			stcO = dd;
-			continue;
-		}
-
-		int szenow = stcO->size;
-		switch (Pop_op(&stcO))
-		{
-		case '+':
-			tf = 1;
-			if (Top_op(&stcO) == ')')
-			{
-				tf = 0;
-				Pop_op(&stcO);
-				flag += 1;
-				math_calculate(stcN, stcO,flg);
-				stcN = ss;
-				stcO = dd;
-
-			}
-
-			if (Top_op(&stcO) == '*')
-			{
-				tf = 0;
-				inrec = 1;
-				math_calculate(stcN, stcO, flg);
-				stcN = ss;
-				stcO = dd;
-			}
-
-			if ((Top_op(&stcO) == '/'))
-			{
-				tf = 0;
-				inrec = 1;
-				math_calculate(stcN, stcO, flg);
-				stcN = ss;
-				stcO = dd;
-			}
-
-			a = Pop_num(&stcN);
-
-			if (((Top_op(&stcO)) == '-') && (tf == 1))
-			{
-				szenow = stcO->size;
-				Pop_op(&stcO);
-				if (!((Top_op(&stcO) == '(') && ((szenow - stcO->size) == 1)))
-					Push_op('+', &stcO);
-
-				a.num = -a.num;
-
-			}
-
-			c.denum = a.denum * b.denum;
-			c.num = a.num * b.denum + b.num * a.denum;
-
-
-			break;
-		case '-':
-			tf = 1;
-			if ((Top_op(&stcO) == '(') && ((szenow - stcO->size) == 1))
-			{
-				tf = 0;
-				c.num = b.num = -b.num;
-				c.denum = b.denum;
-				break;
-			}
-
-			if (Top_op(&stcO) == ')')
-			{
-				tf = 0;
-				Pop_op(&stcO);
-				flag += 1;
-				math_calculate(stcN, stcO, flg);
-				stcN = ss;
-				stcO = dd;
-
-			}
-
-			if (Top_op(&stcO) == '*')
-			{
-				tf = 0;
-				inrec = 1;
-				math_calculate(stcN, stcO, flg);
-				stcN = ss;
-				stcO = dd;
-			}
-
-			if ((Top_op(&stcO) == '/'))
-			{
-				tf = 0;
-				inrec = 1;
-				math_calculate(stcN, stcO, flg);
-				stcN = ss;
-				stcO = dd;
-			}
-
-			a = Pop_num(&stcN);
-
-			if (((Top_op(&stcO)) == '-') && (tf == 1))
-			{
-				szenow = stcO->size;
-				Pop_op(&stcO);
-				if (!((Top_op(&stcO) == '(') && ((szenow - stcO->size) == 1)))
-					Push_op('+', &stcO);
-
-				a.num = -a.num;
-
-			}
-
-			c.denum = a.denum * b.denum;
-			c.num = a.num * b.denum - b.num * a.denum;
-			break;
-		case '*':
-			tf = 1;
-			if (Top_op(&stcO) == ')')
-			{
-				tf = 0;
-				Pop_op(&stcO);
-				flag += 1;
-				math_calculate(stcN, stcO, flg);
-				stcN = ss;
-				stcO = dd;
-
-			}
-
-			if ((Top_op(&stcO) == '/'))
-			{
-				tf = 0;
-				inrec = 1;
-				math_calculate(stcN, stcO, flg);
-				stcN = ss;
-				stcO = dd;
-			}
-			a = Pop_num(&stcN);
-
-			if (((Top_op(&stcO)) == '-') && (tf == 1))
-			{
-				szenow = stcO->size;
-				Pop_op(&stcO);
-				if (!((Top_op(&stcO) == '(') && ((szenow - stcO->size) == 1)))
-					Push_op('+', &stcO);
-
-				a.num = -a.num;
-
-			}
-
-			c.denum = a.denum * b.denum;
-			c.num = a.num * b.num;
-			break;
-		case '/':
-
-			tf = 1;
-			if (Top_op(&stcO) == ')')
-			{
-				tf = 0;
-				Pop_op(&stcO);
-				flag += 1;
-				math_calculate(stcN, stcO, flg);
-				stcN = ss;
-				stcO = dd;
-
-			}
-
-			if ((Top_op(&stcO) == '/'))
-			{
-				tf = 0;
-				inrec = 1;
-				math_calculate(stcN, stcO, flg);
-				stcN = ss;
-				stcO = dd;
-			}
-			a = Pop_num(&stcN);
-
-			if (((Top_op(&stcO)) == '-') && (tf == 1))
-			{
-				szenow = stcO->size;
-				Pop_op(&stcO);
-				if (!((Top_op(&stcO) == '(') && ((szenow - stcO->size) == 1)))
-					Push_op('+', &stcO);
-
-				a.num = -a.num;
-
-			}
-
-			c.denum = a.denum * b.num;
-			c.num = a.num * b.denum;
-			break;
-		default:
-			printf("\n������ �����!\n");
-			exit(-999);
-			break;
-		}
-
-		Push_num(c.num, c.denum, &stcN);
-
-		if (Top_op(&stcO) == '(')
-		{
-			if (flag > 0)
-			{
-				if (inrec)
-				{
-					ss = stcN;
-					dd = stcO;
-					inrec = 0;
-					return;
-				}
-				flag--;
-				Pop_op(&stcO);
-				ss = stcN;
-				dd = stcO;
-				return;
-			}
-			else
-			{
-				printf("\n������! ������������ ����.\n");
-				exit(-987);
-			}
-
-		}
-
-	}
-	*flg = flag;
-	ss = stcN;
-	dd = stcO;
-	return stcN;
+static numbers* ss;
+static operators* dd;
+static flag = 0;
+static int inrec = 0;
+num_value b, a, c;
+int tf;
+while (1)
+{
+if (stcN == NULL)
+{
+printf("\nОшибка Ввода!\n");
+exit(-10001);
 }
-
-
-
+b = Pop_num(&stcN);
+sorting_fractions(&b);
+if (b.denum == 0)
+{
+printf("\nОшибка! деление на ноль\n");
+exit(-423);
+}
+if (stcN == NULL)
+{
+if (Top_op(&stcO) != -1)
+{
+if (Top_op(&stcO) == ')')
+{
+flag++;
+Pop_op(&stcO);
+Push_num(b.num, b.denum, &stcN);
+continue;
+}
+if (Top_op(&stcO) == '-')
+{b.num = -b.num;
+Pop_op(&stcO);
+}
+if (Top_op(&stcO) == '+') {
+Pop_op(&stcO);
+}
+if (Top_op(&stcO) == '(')
+{
+if (flag > 0)
+{
+flag--;
+Pop_op(&stcO);
+Push_num(b.num, b.denum, &stcN);
+continue;
+}
+else
+{
+printf("\nОшибка! Некорректный ввод\n");
+exit(-901);
+}
+}
+if (Top_op(&stcO) != -1)
+{
+printf("\nОшибка! Некорректный ввод!\n");
+exit(-901);
+}
+}
+Push_num(b.num, b.denum, &stcN);
+ss = stcN;
+dd = stcO;
+break;
+}
+if (Top_op(&stcO) == ')')
+{
+flag++;
+Push_num(b.num, b.denum, &stcN);
+Pop_op(&stcO);
+math_calculate(stcN, stcO, flg);
+stcN = ss;
+stcO = dd;
+continue;
+}
+int szenow = stcO->size;
+switch (Pop_op(&stcO))
+{
+case '+':
+tf = 1;
+if (Top_op(&stcO) == ')')
+{
+tf = 0;
+Pop_op(&stcO);
+flag += 1;
+math_calculate(stcN, stcO,flg);
+stcN = ss;
+stcO = dd;}
+if (Top_op(&stcO) == '*')
+{
+tf = 0;
+inrec = 1;
+math_calculate(stcN, stcO, flg);
+stcN = ss;
+stcO = dd;
+}
+if ((Top_op(&stcO) == '/'))
+{
+tf = 0;
+inrec = 1;
+math_calculate(stcN, stcO, flg);
+stcN = ss;
+stcO = dd;
+}
+a = Pop_num(&stcN);
+if (((Top_op(&stcO)) == '-') && (tf == 1))
+{
+szenow = stcO->size;
+Pop_op(&stcO);
+if (!((Top_op(&stcO) == '(') && ((szenow - stcO->size) == 1)))
+Push_op('+', &stcO);
+a.num = -a.num;
+}
+c.denum = a.denum * b.denum;
+c.num = a.num * b.denum + b.num * a.denum;
+break;
+case '-':
+tf = 1;
+if ((Top_op(&stcO) == '(') && ((szenow - stcO->size) == 1))
+{
+tf = 0;
+c.num = b.num = -b.num;
+c.denum = b.denum;
+break;
+}
+if (Top_op(&stcO) == ')')
+{
+tf = 0;
+Pop_op(&stcO);
+flag += 1;
+math_calculate(stcN, stcO, flg);
+stcN = ss;
+stcO = dd;
+}
+if (Top_op(&stcO) == '*')
+{
+tf = 0;
+inrec = 1;
+math_calculate(stcN, stcO, flg);stcN = ss;
+stcO = dd;
+}
+if ((Top_op(&stcO) == '/'))
+{
+tf = 0;
+inrec = 1;
+math_calculate(stcN, stcO, flg);
+stcN = ss;
+stcO = dd;
+}
+a = Pop_num(&stcN);
+if (((Top_op(&stcO)) == '-') && (tf == 1))
+{
+szenow = stcO->size;
+Pop_op(&stcO);
+if (!((Top_op(&stcO) == '(') && ((szenow - stcO->size) == 1)))
+Push_op('+', &stcO);
+a.num = -a.num;
+}
+c.denum = a.denum * b.denum;
+c.num = a.num * b.denum - b.num * a.denum;
+break;
+case '*':
+tf = 1;
+if (Top_op(&stcO) == ')')
+{
+tf = 0;
+Pop_op(&stcO);
+flag += 1;
+math_calculate(stcN, stcO, flg);
+stcN = ss;
+stcO = dd;
+}
+if ((Top_op(&stcO) == '/'))
+{
+tf = 0;
+inrec = 1;
+math_calculate(stcN, stcO, flg);
+stcN = ss;
+stcO = dd;
+}
+a = Pop_num(&stcN);
+if (((Top_op(&stcO)) == '-') && (tf == 1))
+{
+szenow = stcO->size;
+Pop_op(&stcO);
+if (!((Top_op(&stcO) == '(') && ((szenow - stcO->size) == 1)))
+Push_op('+', &stcO);
+a.num = -a.num;
+}
+c.denum = a.denum * b.denum;c.num = a.num * b.num;
+break;
+case '/':
+tf = 1;
+if (Top_op(&stcO) == ')')
+{
+tf = 0;
+Pop_op(&stcO);
+flag += 1;
+math_calculate(stcN, stcO, flg);
+stcN = ss;
+stcO = dd;
+}
+if ((Top_op(&stcO) == '/'))
+{
+tf = 0;
+inrec = 1;
+math_calculate(stcN, stcO, flg);
+stcN = ss;
+stcO = dd;
+}
+a = Pop_num(&stcN);
+if (((Top_op(&stcO)) == '-') && (tf == 1))
+{
+szenow = stcO->size;
+Pop_op(&stcO);
+if (!((Top_op(&stcO) == '(') && ((szenow - stcO->size) == 1)))
+Push_op('+', &stcO);
+a.num = -a.num;
+}
+c.denum = a.denum * b.num;
+c.num = a.num * b.denum;
+break;
+default:
+printf("\nНепредвиденная ошибка!\n");
+break;
+}
+Push_num(c.num, c.denum, &stcN);
+if (Top_op(&stcO) == '(')
+{
+if (flag > 0)
+{
+if (inrec)
+{
+ss = stcN;
+dd = stcO;
+inrec = 0;
+return;
+}
+flag--;
+Pop_op(&stcO);
+ss = stcN;
+dd = stcO;
+return;
+}else
+{
+printf("\nОшибка! некорректный ввод.\n");
+exit(-987);
+}
+}
+}
+*flg = flag;
+ss = stcN;
+dd = stcO;
+return stcN;
+}
 int calc(const char* str,int* to_num,int* to_denum)
 {
-	int numer = 0, denumer = 1;
-	const char inwrd[] = "0123456789+-/*()";
-	char chr;
-	for (int cnt = 0; (chr = *(str + cnt)) != '\0'; cnt++)
-	{
-		if (strchr(inwrd, chr) == NULL)
-			return 0;
-	}
-
-	numbers* stk_num = NULL;
-	operators* stk_opr = NULL;
-
-	int flag = 1;
-	int number;
-	int siz = 0;
-	for (int i = 0; *(str + i) != '\0'; i++)
-	{
-
-		if (strchr("0123456789", *(str + i)) != NULL)
-		{
-			number = atoi(str + i);
-			Push_num(number, 1, &stk_num);
-			stk_num->size = ++siz;
-			for (; strchr("0123456789", *(str + i)) != NULL; i++)
-			{
-				if (*(str + i) == NULL)
-					break;
-			}
-			i--;
-			continue;
-		}
-		if (strchr("+-/*()", *(str + i)) != NULL)
-		{
-			Push_op(*(str + i), &stk_opr);
-			stk_opr->size = ++siz;
-			continue;
-		}
-	
-		return 0;
-	}
-	int fag = 9999;
-	stk_num = math_calculate(stk_num, stk_opr,&fag);
-
-	if (fag != 0)
-	{
-		printf("\n������ �����!\n");
-		exit(9099);
-	}
-
-	num_value is_value = Pop_num(&stk_num);
-
-	sorting_fractions(&is_value);
-
-	printf("\n%d/%d\n", is_value.num, is_value.denum);
-
-
-	return 1;
+int numer = 0, denumer = 1;
+const char inwrd[] = "0123456789+-/*()";
+char chr;
+for (int cnt = 0; (chr = *(str + cnt)) != '\0'; cnt++)
+{
+if (strchr(inwrd, chr) == NULL)
+return 0;
 }
-
+numbers* stk_num = NULL;
+operators* stk_opr = NULL;
+int flag = 1;
+int number;
+int siz = 0;
+for (int i = 0; *(str + i) != '\0'; i++)
+{
+if (strchr("0123456789", *(str + i)) != NULL)
+{
+number = atoi(str + i);
+Push_num(number, 1, &stk_num);
+stk_num->size = ++siz;
+for (; strchr("0123456789", *(str + i)) != NULL; i++)
+{
+if (*(str + i) == NULL)
+break;
+}
+i--;
+continue;
+}
+if (strchr("+-/*()", *(str + i)) != NULL)
+{
+Push_op(*(str + i), &stk_opr);
+stk_opr->size = ++siz;
+continue;
+}
+return 0;
+}
+int fag = 9999;
+stk_num = math_calculate(stk_num, stk_opr,&fag);
+if (fag != 0)
+{printf("\nОшибка ввода!\n");
+exit(9099);
+}
+num_value is_value = Pop_num(&stk_num);
+sorting_fractions(&is_value);
+printf("\n%d/%d\n", is_value.num, is_value.denum);
+return 1;
+}
 // --------------------------------------------------------------------------- main
 int main()
 {
-	setlocale(LC_ALL,"RUS");
-
-	int numerator, denominator;
-
-	printf("������� ���� ���������:\n ");
-	char* input_value = NULL;
-	int Sizec = 0;
-	int cont = 0;
-	for (char Ic; (Ic = getchar()) != '\n'; Sizec++)
-	{
-		if ((Sizec + 2) > (cont * 5))
-		{
-			cont++;
-			input_value = realloc(input_value, cont * 5);
-		}
-
-		*(input_value + Sizec) = Ic;
-		*(input_value + Sizec + 1) = '\0';
-	}
-
-	if (input_value == NULL)
-		exit(-228);
-
-
-	if (calc(input_value, &numerator, &denominator) == 0)
-		printf("\n������! ������������ ������� ��� ������������ ������.\n");
-	else
-	{
-
-	}
-	
-	system("pause");
-	return 0;
+setlocale(LC_ALL,"RUS");
+int numerator, denominator;
+printf("Введите ваше выражение:\n ");
+char* input_value = NULL;
+int Sizec = 0;
+int cont = 0;
+for (char Ic; (Ic = getchar()) != '\n'; Sizec++)
+{
+if ((Sizec + 2) > (cont * 5))
+{
+cont++;
+input_value = realloc(input_value, cont * 5);
+}
+*(input_value + Sizec) = Ic;
+*(input_value + Sizec + 1) = '\0';
+}
+if (input_value == NULL)
+exit(-228);
+if (calc(input_value, &numerator, &denominator) == 0)
+printf("\nОшибка! Недопустимые символы или некорректная запись.\n");
+else
+{
+}
+system("pause");
+return 0;
 }
